@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { db } from "../firebase"; // Make sure your firebase.ts is correctly set up
 import { collection, addDoc } from "firebase/firestore";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../store/store";
+import { fetchTasks } from "../store/taskSlice";
+
 
 interface AddTaskDialogProps {
     isOpen: boolean;
@@ -18,6 +22,7 @@ interface Task {
 
 const AddTaskDialog: React.FC<AddTaskDialogProps> = ({ isOpen, onClose }) => {
     const [title, setTitle] = useState("");
+    const dispatch = useDispatch<AppDispatch>();
     const [description, setDescription] = useState("");
     const [category, setCategory] = useState("Work");
     const [dueDate, setDueDate] = useState("");
@@ -41,7 +46,10 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({ isOpen, onClose }) => {
         try {
             // Add new task to Firestore
             const docRef = await addDoc(collection(db, "tasks"), newTask);
+            console.log(newTask);
+            
             console.log("Task added with ID: ", docRef.id);
+            dispatch(fetchTasks())
             onClose(); // Close the modal
             resetForm(); // Reset form after submission
         } catch (e) {
@@ -105,7 +113,7 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({ isOpen, onClose }) => {
                                 className={`px-4 py-2 border rounded-full text-sm font-medium focus:outline-none ${
                                     category === "Personal" ? "bg-gray-300" : "bg-gray-200"
                                 }`}
-                                onClick={() => setCategory("Personal")}
+                                onClick={() => setCategory("personal")}
                             >
                                 Personal
                             </button>

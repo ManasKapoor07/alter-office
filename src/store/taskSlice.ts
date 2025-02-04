@@ -69,6 +69,7 @@ export const fetchTasks = createAsyncThunk<Task[], { categoryFilter?: string; da
 
             return {
                 id: doc.id,
+                title : data.title,
                 description: data.description,
                 status: data.status,
                 category: data.category,

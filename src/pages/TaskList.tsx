@@ -15,7 +15,7 @@ import { RootState, AppDispatch } from "../store/store";
 import taskSrc from '../assets/task_icon.svg'
 import listSrc from '../assets/list_icon.svg'
 import boardSrc from '../assets/board.svg'
-import { ChevronDownIcon, ChevronUpIcon, DotsHorizontalIcon, PlusCircledIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, ChevronUpIcon, DotsHorizontalIcon, MagnifyingGlassIcon, PlusCircledIcon } from "@radix-ui/react-icons";
 import dragSrc from '../assets/drag_icon.svg'
 import logoutSrc from '../assets/logout_icon.svg'
 import checkmark from '../assets/checkmark.svg'
@@ -25,6 +25,8 @@ import greenCheckmark from '../assets/greencheckmark.svg'
 
 import enerSrc from '../assets/enter.svg'
 import { Link } from "react-router-dom";
+import AddTaskDialog from "./AddTaskDialog";
+import EditTaskDialog from "./EditDialog";
 
 interface User {
     displayName: string;
@@ -34,6 +36,7 @@ interface User {
 interface Task {
     id: string;
     description: string;
+    title: string;
     date: string;
     category: string;
     status: string;
@@ -46,11 +49,15 @@ const TaskManager: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { tasks, loading, error } = useSelector((state: RootState) => state.tasks);
     const [user, setUser] = useState<User | null>(null);
-    // const [tasks, setTasks] = useState<Task[]>([]);
     const [isdialoag, setisdialoag] = useState(false);
 
     const { tab } = useParams<{ tab: string }>();
     const navigate = useNavigate();
+    const auth = getAuth();
+
+    const [categoryFilter, setCategoryFilter] = useState<string>("");
+    const [dateFilter, setDateFilter] = useState<string>("");
+    const [searchQuery, setSearchQuery] = useState<string>("");
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -67,21 +74,18 @@ const TaskManager: React.FC = () => {
         return () => unsubscribe(); // Cleanup listener
     }, [navigate]);
 
-    const auth = getAuth();
-
     const handleLogout = async () => {
         try {
             await signOut(auth);
-            navigate('/')
-            // Redirect to login page or show a message
+            navigate("/");
         } catch (error) {
             console.error("Logout failed:", error);
         }
     };
 
     useEffect(() => {
-        dispatch(fetchTasks())
-    }, []);
+        dispatch(fetchTasks({ categoryFilter, dateFilter }));
+    }, [categoryFilter, dateFilter, dispatch]);
 
     const moveTask = async (taskId: string, newStatus: string, newIndex: number) => {
         const taskRef = doc(db, "tasks", taskId);
@@ -89,39 +93,42 @@ const TaskManager: React.FC = () => {
         dispatch(fetchTasks({ categoryFilter, dateFilter }));
     };
 
-
-    const [categoryFilter, setCategoryFilter] = useState<string>("");
-    const [dateFilter, setDateFilter] = useState<string>("");
-
-    useEffect(() => {
-        dispatch(fetchTasks({ categoryFilter, dateFilter }));
-    }, [categoryFilter, dateFilter, dispatch]);
+    const handleDialogOpen = () => {
+        setisdialoag(true);
+    };
 
     const activeTab = tab === "board" ? "board" : "list";
 
+    // 🔎 **Filter tasks based on search query**
+    const filteredTasks = tasks.filter((task) =>
+        task?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task?.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task?.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    console.log(searchQuery);
+
+
     return (
-        <DndProvider backend={HTML5Backend}>
+        <><DndProvider backend={HTML5Backend}>
             <div className="h-screen w-full p-4">
                 <div className="flex items-center justify-between bg-white p-4">
                     <div className="flex">
-                        <img src={taskSrc} alt="" />
-                        <h1 className="text-[24px] font-semibood">TaskBuddy</h1>
+                        <img src={taskSrc} alt="Task Manager Logo" />
+                        <h1 className="text-[24px] font-semibold">TaskBuddy</h1>
                     </div>
                     {user && (
                         <div className="flex items-center gap-3">
                             <img
                                 src={user?.photoUrl}
                                 alt="Profile"
-                                className="w-10 h-10 rounded-full border"
-                            />
+                                className="w-10 h-10 rounded-full border" />
                             <span className="text-gray-700">{user.displayName}</span>
                         </div>
                     )}
                 </div>
+
                 <div className="flex justify-end px-4">
-                    <button
-                        onClick={handleLogout}
-                    >
+                    <button onClick={handleLogout}>
                         <div className="flex items-center gap-2 bg-[#FFF9F9] px-4 py-2 rounded-2xl border border-[#7B1984]/10">
                             <img src={logoutSrc} />
                             Logout
@@ -129,12 +136,30 @@ const TaskManager: React.FC = () => {
                     </button>
                 </div>
 
+                {/* 🔎 **Search Input Field** */}
+                <div className="items-center flex gap-2 justify-end my-3 px-4">
+                    <div className="relative">
+                        <MagnifyingGlassIcon className="absolute size-6 bottom-0 top-2 left-2 text-gray-500" />
+                        <input
+                            className="w-60 h-10 border border-gray-400 rounded-3xl px-9 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="Search tasks..."
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <button
+                        onClick={handleDialogOpen}
+                        className="bg-[#7B1984] py-2 px-6 cursor-pointer z-10 rounded-4xl text-white text-[14px]">
+                        Add Task
+                    </button>
+                </div>
+
                 {/* Tabs */}
-                <div className="flex justify-start gap-2 p-4 -mt-15">
+                <div className="flex justify-start gap-2 p-3 -mt-28">
                     <Link
                         to="/tasks/list"
-                        className={`px-2 py-2 rounded text-[16px] ${activeTab === "list" ? "font-bold text-black" : ""
-                            }`}
+                        className={`px-2 py-2 rounded text-[16px] ${activeTab === "list" ? "font-bold text-black" : ""}`}
                     >
                         <div className="flex items-center">
                             <img src={listSrc} alt="list" className="size-6" />
@@ -143,8 +168,7 @@ const TaskManager: React.FC = () => {
                     </Link>
                     <Link
                         to="/tasks/board"
-                        className={`px-2 py-2 rounded text-[16px] ${activeTab === "board" ? "font-bold text-black" : ""
-                            }`}
+                        className={`px-2 py-2 rounded text-[16px] ${activeTab === "board" ? "font-bold text-black" : ""}`}
                     >
                         <div className="flex items-center">
                             <img src={boardSrc} alt="board" className="size-6" />
@@ -152,6 +176,7 @@ const TaskManager: React.FC = () => {
                         </div>
                     </Link>
                 </div>
+
                 <div className="flex flex-col mb-3 px-4">
                     <div className="gap-4 flex items-center">
                         <span>Filter by:</span>
@@ -168,16 +193,19 @@ const TaskManager: React.FC = () => {
                         </select>
                     </div>
                 </div>
+
                 <div className="bg-gray-400 opacity-10 h-0.5 w-full my-4" />
+
+                {/* 🔹 Render Filtered Tasks in List or Board View */}
                 {activeTab === "list" ? (
-                    <TaskListView tasks={tasks} moveTask={moveTask} />
+                    <TaskListView tasks={filteredTasks} moveTask={moveTask} />
                 ) : (
-                    <TaskBoardView tasks={tasks} moveTask={moveTask} />
+                    <TaskBoardView tasks={filteredTasks} moveTask={moveTask} />
                 )}
 
             </div>
-
         </DndProvider>
+            <AddTaskDialog isOpen={isdialoag} onClose={() => setisdialoag(false)} /></>
     );
 };
 
@@ -242,7 +270,18 @@ const TaskSection: React.FC<{
     moveTask: Function;
     isBoardView?: boolean;
 }> = ({ title, tasks, status, moveTask, isBoardView = false }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const [sectionOpen, setSectionOpen] = useState<{ [key: string]: boolean }>({
+        todo: true,
+        inProgress: true,
+        completed: true
+    });
+
+    const toggleSection = (section: string) => {
+        setSectionOpen((prev) => {
+            const newState = { ...prev, [section]: !prev[section] };
+            return newState;
+        });
+    };
     const dispatch = useDispatch<AppDispatch>();
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [newTask, setNewTask] = useState({ title: "", date: "", status: "todo", category: "" });
@@ -261,7 +300,7 @@ const TaskSection: React.FC<{
 
         try {
             const docRef = await addDoc(collection(db, "tasks"), {
-                description: newTask.title,
+                title: newTask.title,
                 date: newTask.date,
                 status: newTask.status,
                 category: newTask.category,
@@ -281,21 +320,24 @@ const TaskSection: React.FC<{
 
 
     return (
-        <div ref={drop} className={`rounded-t-2xl  flex flex-col  ${isOver ? "bg-white" : "bg-[#F1F1F1]"} ${isBoardView ? "w-[27%]  h-fit " : "mb-6"}`}>
+        <div ref={drop}
+            className={`rounded-t-2xl  flex flex-col  ${isOver ? "bg-white" : "bg-[#F1F1F1]"} ${isBoardView ? "w-[27%]  h-fit " : "mb-6"}`}>
             <div
-                className={`p-2 rounded-t-2xl font-bold flex justify-between  cursor-pointer  ${!isBoardView ? sectionColors[title] : 'bg-[#F1F1F1]'}`}
-                onClick={() => setIsOpen((prev) => !prev)}
+                className={`p-2 z-10 rounded-t-2xl font-bold flex justify-between cursor-pointer ${!isBoardView ? sectionColors[title] : 'bg-[#F1F1F1]'}`}
+                onClick={() => {
+                    toggleSection(status)
+                }}
             >
-                <span className={` ${isBoardView ? sectionColors[title] : ''} p-2 rounded-md font-medium`}>{title}</span>
-                {isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                <span
+                    className={`p-2 rounded-md font-medium ${isBoardView ? sectionColors[title] : ''}`}>{title}</span>
+                {sectionOpen[status] ? <ChevronUpIcon /> : <ChevronDownIcon />}
             </div>
-
             <motion.div
                 initial={{ maxHeight: 0, opacity: 0 }}
-                animate={{ maxHeight: isOpen ? 600 : 0, opacity: isOpen ? 1 : 0 }}
+                animate={{ maxHeight: sectionOpen[status] ? 600 : 0, opacity: sectionOpen[status] ? 1 : 0 }}
                 exit={{ maxHeight: 0, opacity: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className={`${isBoardView ? 'overflow-y-auto' : ''}`}
+                className="overflow-visible"
             >
 
                 <div className="mt-2 flex flex-col justify-center items-center ">
@@ -444,12 +486,6 @@ const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function }>
 
     const handleUpdate = async () => {
         const taskRef = doc(db, "tasks", task.id);
-        await updateDoc(taskRef, {
-            description: editedTask.description,
-            status: editedTask.status,
-            category: editedTask.category,
-        });
-
         setIsEditing(false);
         dispatch(fetchTasks())
     };
@@ -491,38 +527,16 @@ const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function }>
     const handleClose = () => {
         setAnchorEl(null);
     };
+    // const handleUpdate = (updatedTask) => {
+    //     console.log("Updated Task:", updatedTask);
+    //     // Perform any further action, such as re-fetching tasks
+    // };
     return (
         <motion.div
             ref={drag}
             className={`p-2 rounded cursor-pointer   ${tab === 'board' ? ' items-baseline ' : 'gap-4 items-center'} flex   w-full ${isDragging ? "opacity-50" : "opacity-100"}`}
         >
-            {isEditing ? (
-                <div className="flex items-center justify-between w-full">
-                    <input
-                        type="text"
-                        value={editedTask.description}
-                        onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
-                        className="p-1 border rounded w-1/3"
-                    />
-                    <select
-                        value={editedTask.status}
-                        onChange={(e) => setEditedTask({ ...editedTask, status: e.target.value })}
-                        className="p-1 border rounded w-1/4"
-                    >
-                        <option value="todo">To-Do</option>
-                        <option value="inProgress">In Progress</option>
-                        <option value="completed">Completed</option>
-                    </select>
-                    <div className="flex gap-2">
-                        <button className="px-2 py-1 bg-blue-500 text-white rounded" onClick={handleUpdate}>
-                            Save
-                        </button>
-                        <button className="px-2 py-1 bg-gray-300 rounded" onClick={() => setIsEditing(false)}>
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            ) : (
+            {(
                 tab === 'list' ?
 
                     <div className="flex justify-between items-center w-full">
@@ -541,7 +555,7 @@ const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function }>
                             }
                             <img src={dragSrc} className="h-6 w-6" />
                         </div>
-                        <span className={`${task.status === 'completed' ? 'line-through' : ''} w-1/3 `}>{task.description}</span>
+                        <span className={`${task.status === 'completed' ? 'line-through' : ''} w-1/3 `}>{task?.title}</span>
                         <span className="w-1/4">{task?.date}</span>
                         <Select
                             value={status}
@@ -555,7 +569,7 @@ const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function }>
                                 </MenuItem>
                             ))}
                         </Select>
-                        <span className="w-1/4 text-center">{task?.category}</span>
+                        <span className="w-1/4 text-center uppercase">{task?.category}</span>
 
                         <div>
                             <IconButton onClick={handleClick}>
@@ -587,9 +601,9 @@ const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function }>
 
                     </div>
                     :
-                    <div className="bg-white flex flex-col w-full p-2 rounded-lg h-30">
+                    <><div className="bg-white flex flex-col w-full p-2 rounded-lg h-30">
                         <div className="flex justify-between items-center">
-                            <span className={`${task.status === 'completed' ? 'line-through' : ''} w-1/3 ml-2 truncate`}>{task.description}</span>
+                            <span className={`${task.status === 'completed' ? 'line-through' : ''} w-1/3 ml-2 truncate`}>{task.title}</span>
                             <div>
                                 <IconButton onClick={handleClick}>
                                     <DotsHorizontalIcon />
@@ -597,9 +611,9 @@ const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function }>
 
                                 <Menu anchorEl={anchorEl} open={isOpen} onClose={handleClose}>
                                     <MenuItem
+                                    className=""
                                         onClick={() => {
                                             setIsEditing(true);
-                                            handleClose();
                                         }}
                                     >
                                         <EditIcon className="" sx={{ marginRight: 1 }} />
@@ -623,6 +637,7 @@ const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function }>
                             <span className="w-1/4  text-[14px] font-medium text-black opacity-40">{task?.date}</span>
                         </div>
                     </div>
+                        <EditTaskDialog isOpen={isEditing} onClose={() => setIsEditing(false)}  onUpdate={handleUpdate} taskId={task.id}/></>
             )}
         </motion.div>
     );
