@@ -10,7 +10,7 @@ export default function LoginPage() {
     const handleGoogleLogin = async () => {
         try {
             const result = await signInWithPopup(auth, googleProvider);
-            navigate("/tasks"); 
+            navigate("/tasks/list"); 
         } catch (error) {
             console.error("Login Error:", error);
         }
@@ -27,7 +27,7 @@ export default function LoginPage() {
                 </p>
                 <button
                     onClick={handleGoogleLogin}
-                    className="mt-6 flex w-64 items-center justify-center gap-3 rounded-2xl bg-black p-3 text-white shadow-lg hover:bg-gray-900"
+                    className="mt-6 flex w-64 cursor-pointer items-center justify-center gap-3 rounded-2xl bg-black p-3 text-white shadow-lg hover:bg-gray-900"
                 >
                     <FcGoogle className="text-2xl" />
                     Continue with Google
