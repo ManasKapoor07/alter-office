@@ -7,10 +7,11 @@ import { format, isToday } from "date-fns";
 interface Task {
     id: string;
     description: string;
-    date: string;
+    dueDate: string;
     status: string;
     category: string;
     order: number;
+    activity : [];
 }
 
 // Initial State
@@ -48,8 +49,8 @@ export const fetchTasks = createAsyncThunk<Task[], { categoryFilter?: string; da
             if (dateFilter === "today") {
                 startDate = new Date(today.setHours(0, 0, 0, 0));
                 endDate = new Date(today.setHours(23, 59, 59, 999));
-                console.log(startDate , endDate);
-                
+                console.log(startDate, endDate);
+
             } else if (dateFilter === "month") {
                 startDate = new Date(today.getFullYear(), today.getMonth(), 1);
                 endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -65,16 +66,20 @@ export const fetchTasks = createAsyncThunk<Task[], { categoryFilter?: string; da
         const querySnapshot = await getDocs(q);
         const fetchedTasks: Task[] = querySnapshot.docs.map((doc) => {
             const data = doc.data();
-            const taskDate = data.createdAt?.toDate ? data.createdAt.toDate() : new Date();
+            console.log(doc.data().dueDate);
 
+            const formattedDate = data.dueDate
+                ? format(new Date(data.dueDate), "dd MMM, yyyy")
+                : format(new Date().toISOString().split("T")[0] , "dd MMM, yyyy");
             return {
                 id: doc.id,
-                title : data.title,
+                title: data.title,
                 description: data.description,
                 status: data.status,
                 category: data.category,
-                date: isToday(taskDate) ? "Today" : format(taskDate, "yyyy-MM-dd"),
+                dueDate: formattedDate,
                 order: data.order || 0,
+                activity : data.activity
             };
         });
         console.log(fetchedTasks);
