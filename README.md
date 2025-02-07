@@ -1,50 +1,86 @@
-# React + TypeScript + Vite
+TaskBuddy - Task Management Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+🚀 Overview
 
-Currently, two official plugins are available:
+TaskBuddy is a responsive task management application built using Vite + React with TypeScript. It empowers users to efficiently create, organize, and track tasks while supporting user authentication with Firebase. Users can sign in with Google, create tasks, categorize them, set due dates, and organize them using a drag-and-drop Kanban board or a list view.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+🎯 Features
 
-## Expanding the ESLint configuration
+1. User Authentication
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+Google Sign-In using Firebase Authentication.
 
-- Configure the top-level `parserOptions` property like this:
+User profile management.
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+2. Task Management
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+Create, edit, and delete tasks.
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+Categorize tasks (e.g., Work, Personal) and add tags.
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+Set due dates for tasks.
+
+3. Drag & Drop Organization
+
+Rearrange tasks within lists using react-beautiful-dnd.
+
+4. Sorting & Filtering
+
+Sort tasks by due date (ascending/descending).
+
+Filter tasks by category, tags, and date range.
+
+Search tasks by title.
+
+5. Batch Actions
+
+Mark multiple tasks as complete.
+
+Delete multiple tasks at once.
+
+6. Task History & Activity Log
+
+Tracks all changes (creation, edits, deletions) with timestamps.
+
+7. File Attachments
+
+Upload and attach files to tasks using Supabase Storage.
+
+8. Board/List View
+
+Toggle between a Kanban board and a list view for better task management.
+
+9. Responsive Design
+
+Fully responsive design for mobile, tablet, and desktop.
+
+🛠️ Tech Stack
+
+Frontend: Vite + React + TypeScript
+
+UI Components: Tailwind CSS, React Icons
+
+State Management & Data Fetching: Redux
+
+Authentication & Database: Firebase
+
+File Storage: Supabase
+
+Drag & Drop: react-beautiful-dnd
+
+🏗 Installation & Setup
+
+1 Clone the Repository
+
+git clone https://github.com/your-username/taskbuddy.git
+cd taskbuddy
+
+2 Install Dependencies
+
+npm install
+
+3 Run the Project
+
+npm run dev
+
+The app should now be running on http://localhost:5173/ 
