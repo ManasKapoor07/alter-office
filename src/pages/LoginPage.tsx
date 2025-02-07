@@ -20,7 +20,7 @@ export default function LoginPage() {
     return (
         <div className="flex flex-col md:flex-row md:bg-none">
             {/* Left Side - Login Content */}
-            <div className="flex h-screen w-full flex-col items-center justify-center p-6 ">
+            <div className="flex h-screen w-full flex-col items-center justify-center p-6 bg-[url('https://buwlbydemiluyxcpybrk.supabase.co/storage/v1/object/public/todo/attachments/login.png')]  bg-cover bg-no-repeat md:bg-none">
                 {/* <div className="relative flex items-end justify-end ">
                     <div className="absolute flex md:hidden items-center justify-center ">
                         <div className="absolute h-[50px] w-[50px] rounded-full border-2 border-[#7B1984] opacity-50"></div>
