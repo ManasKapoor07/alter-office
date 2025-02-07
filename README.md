@@ -72,7 +72,7 @@ Drag & Drop: react-beautiful-dnd
 
 1 Clone the Repository
 
-git clone https://github.com/your-username/taskbuddy.git
+git clone https://github.com/ManasKapoor07/alter-office.git
 cd taskbuddy
 
 2 Install Dependencies
