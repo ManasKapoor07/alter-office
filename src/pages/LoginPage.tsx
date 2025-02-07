@@ -18,14 +18,14 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex w-full h-full flex-col md:flex-row bg-[#FFF9F9]">
+        <div className="flex flex-col md:flex-row md:bg-none">
             {/* Left Side - Login Content */}
-            <div className="flex h-screen w-full flex-col items-center justify-center p-6">
-                <div className="relative flex items-start justify-start w-full">
-                    <div className="absolute flex md:hidden items-center justify-center right-0">
-                        <div className="absolute h-[100px] w-[100px] rounded-full border-2 border-[#7B1984] opacity-50"></div>
-                        <div className="absolute h-[200px] w-[200px] rounded-full border-2 border-[#7B1984] opacity-50"></div>
-                        <div className="absolute h-[300px] w-[300px] rounded-full border-2 border-[#7B1984] opacity-30"></div>
+            <div className="flex h-screen w-full flex-col items-center justify-center p-6 ">
+                {/* <div className="relative flex items-end justify-end ">
+                    <div className="absolute flex md:hidden items-center justify-center ">
+                        <div className="absolute h-[50px] w-[50px] rounded-full border-2 border-[#7B1984] opacity-50"></div>
+                        <div className="absolute h-[80px] w-[80px] rounded-full border-2 border-[#7B1984] opacity-50"></div>
+                        <div className="absolute h-[100px] w-[100px] rounded-full border-2 border-[#7B1984] opacity-30"></div>
                     </div>
                 </div>
                 <div className="relative flex w-full">
@@ -34,15 +34,9 @@ export default function LoginPage() {
                         <div className="absolute h-[150px] w-[150px] rounded-full border-2 border-[#7B1984] opacity-50"></div>
                         <div className="absolute h-[200px] w-[200px] rounded-full border-2 border-[#7B1984] opacity-30"></div>
                     </div>
-                </div>
+                </div> */}
 
-                <div className="relative flex w-full">
-                    <div className="absolute flex md:hidden items-center justify-center -bottom-[900px] top-24 -left-4 right-2">
-                        <div className="absolute h-[50px] w-[50px] rounded-full border-2 border-[#7B1984] opacity-50"></div>
-                        <div className="absolute h-[100px] w-[100px] rounded-full border-2 border-[#7B1984] opacity-50"></div>
-                        <div className="absolute h-[150px] w-[150px] rounded-full border-2 border-[#7B1984] opacity-30"></div>
-                    </div>
-                </div>
+
 
                 <div className="w-full h-full p-6 flex md:items-baseline flex-col md:justify-baseline justify-center items-center text-center md:text-left">
                     <h1 className="text-[26px] font-bold text-[#7B1984] flex items-center gap-2">
@@ -60,7 +54,13 @@ export default function LoginPage() {
                     </button>
                 </div>
             </div>
-
+            {/* <div className="relative flex w-full">
+                <div className="absolute flex md:hidden items-center justify-center -left-4 right-2">
+                    <div className="absolute h-[50px] w-[50px] rounded-full border-2 border-[#7B1984] opacity-50"></div>
+                    <div className="absolute h-[100px] w-[100px] rounded-full border-2 border-[#7B1984] opacity-50"></div>
+                    <div className="absolute h-[150px] w-[150px] rounded-full border-2 border-[#7B1984] opacity-30"></div>
+                </div>
+            </div> */}
 
             {/* Right Side - Visuals */}
             <div className="hidden md:flex w-full items-center justify-center relative p-6">

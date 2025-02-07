@@ -180,12 +180,12 @@ const TaskManager: React.FC = () => {
     return (
         <>
             <DndProvider backend={HTML5Backend}>
-                <div className="h-screen w-full p-4">
+                <div className="h-screen w-[90%] md:w-full md:p-4 p-1 ">
                     {/* Header */}
-                    <div className="flex md:flex-row items-center justify-between bg-white p-4">
-                        <div className="flex items-center md:mb-0">
+                    <div className="flex md:flex-row items-center  justify-between md:bg-white bg-[#FAEEFC] md:p-4 p-2">
+                        <div className="flex items-center md:mb-0 ">
                             <img src={taskSrc} alt="Task Manager Logo" className="w-6 h-6  hidden md:flex" />
-                            <h1 className="text-[24px] font-semibold ml-2">TaskBuddy</h1>
+                            <h1 className="md:text-[24px] text-[20px] font-semibold ml-2">TaskBuddy</h1>
                         </div>
                         {user && (
                             <div className="flex items-center gap-3">
@@ -234,7 +234,7 @@ const TaskManager: React.FC = () => {
                             className={`px-2 py-2 rounded text-[16px] ${activeTab === "list" ? "font-bold text-black" : ""}`}
                         >
                             <div className="flex items-center">
-                                <img src={listSrc} alt="list" className="size-6" />
+                                <img src={listSrc} alt="list" className="size-4" />
                                 <span className="ml-2">List</span>
                             </div>
                         </Link>
@@ -243,7 +243,7 @@ const TaskManager: React.FC = () => {
                             className={`px-2 py-2 rounded text-[16px] ${activeTab === "board" ? "font-bold text-black" : ""}`}
                         >
                             <div className="flex items-center">
-                                <img src={boardSrc} alt="board" className="size-6" />
+                                <img src={boardSrc} alt="board" className="size-4" />
                                 <span className="ml-2">Board</span>
                             </div>
                         </Link>
