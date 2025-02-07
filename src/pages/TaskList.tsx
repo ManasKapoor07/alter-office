@@ -192,6 +192,7 @@ const TaskManager: React.FC = () => {
                                 <img
                                     src={user?.photoUrl}
                                     alt="Profile"
+                                    onClick={handleLogout}
                                     className="w-10 h-10 rounded-full border " />
                                 <span className="text-gray-700 hidden md:flex">{user.displayName}</span>
                             </div>
