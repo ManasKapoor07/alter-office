@@ -13,13 +13,20 @@ interface Task {
   category: string;
   dueDate: string;
   status: string;
-  activity: [];
+  activity: { DateTime: string; desc: string }[];
   attachmentUrl?: string;
 }
 const supabase = createClient("https://buwlbydemiluyxcpybrk.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1d2xieWRlbWlsdXl4Y3B5YnJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg3NTU2MjcsImV4cCI6MjA1NDMzMTYyN30.y68vY5KG_FoLBI42t7tcgySyrCBRm5qPW3PSn_zcHPM");
 
 
-const EditTaskDialog = ({ isOpen, onClose, taskId, onUpdate }) => {
+interface EditTaskDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  taskId: string;
+  onUpdate: (task: Task) => void;
+}
+
+const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, onClose, taskId, onUpdate }) => {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -67,7 +74,7 @@ const EditTaskDialog = ({ isOpen, onClose, taskId, onUpdate }) => {
     }
   }, [taskId, isOpen]);
 
-  const handleFileUpload = async (file) => {
+  const handleFileUpload = async (file : any) => {
     if (!file || !task) return;
     setUploading(true);
     try {
@@ -179,13 +186,13 @@ const EditTaskDialog = ({ isOpen, onClose, taskId, onUpdate }) => {
               </button>
             </div>
 
-            <div className="space-y-4 ">
-              <div>
+            <div className="space-y-4 p-2">
+              <div mx-6className="">
                 {/* <label className="block text-sm font-medium text-gray-700">Title</label> */}
                 <input
                   type="text"
                   value={task?.title}
-                  onChange={(e) => setTask({ ...task, title: e.target.value })}
+                  onChange={(e) => setTask({ ...task!, title: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -193,7 +200,7 @@ const EditTaskDialog = ({ isOpen, onClose, taskId, onUpdate }) => {
                 {/* <label className="block text-sm font-medium text-gray-700">Description</label> */}
                 <textarea
                   value={task?.description}
-                  onChange={(e) => setTask({ ...task, description: e.target.value })}
+                  onChange={(e) => setTask({ ...task!, description: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -227,7 +234,7 @@ const EditTaskDialog = ({ isOpen, onClose, taskId, onUpdate }) => {
                   <input
                     type="date"
                     value={task?.dueDate}
-                    onChange={(e) => setTask({ ...task, dueDate: e.target.value })}
+                    onChange={(e) => setTask({ ...task!, dueDate: e.target.value })}
                     className="w-52 md:w-full  p-2 border border-gray-300 bg-[#F1F1F1]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -301,7 +308,7 @@ const EditTaskDialog = ({ isOpen, onClose, taskId, onUpdate }) => {
                           day: "numeric",
                         })}{" "}
                         at{" "}
-                        {new Date(log.DateTime).toLocaleTimeString("en-US", {
+                        {new Date(log?.DateTime).toLocaleTimeString("en-US", {
                           hour: "numeric",
                           minute: "2-digit",
                           hour12: true,

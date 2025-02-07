@@ -21,7 +21,7 @@ interface Task {
     dueDate: string;
     status: string;
     order: number;
-    activity: [];
+    activity: { DateTime: string; desc: string }[];
     attachmentUrl?: string; // Add attachment URL field
 }
 
