@@ -201,12 +201,19 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-600 mb-2">Attachment</label>
                         <input
                             type="file"
+                            id="add-file"
                             onChange={(e) => setFile(e.target.files?.[0] || null)}
-                            className="border border-gray-300 rounded-lg p-3 w-full"
+                            className="border border-gray-300 hidden rounded-lg p-3 w-full"
                         />
+                        <label
+                            className="block text-sm text-gray-600 mb-2">Attachment</label>
+                        <label
+                            htmlFor="add-file"
+                            className="h-14 bg-[#F1F1F1]/30 rounded-b-md text-center flex justify-center items-center">
+                            Drop your files here or <span className="text-[#2956DD] underline ml-1 cursor-pointer"> Update</span>
+                        </label>
                         {file && (
                             <p className="text-sm text-gray-500 mt-1">
                                 Selected file: {file.name}

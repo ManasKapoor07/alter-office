@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import { useNavigate, useParams } from "react-router-dom";
-import { collection, updateDoc, doc, addDoc, deleteDoc, getDocs, getDoc } from "firebase/firestore";
+import { collection, updateDoc, doc, addDoc, deleteDoc, getDocs, getDoc, writeBatch, arrayUnion } from "firebase/firestore";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { motion } from "framer-motion";
@@ -15,19 +15,19 @@ import { RootState, AppDispatch } from "../store/store";
 import taskSrc from '../assets/task_icon.svg'
 import listSrc from '../assets/list_icon.svg'
 import boardSrc from '../assets/board.svg'
-import { CaretSortIcon, ChevronDownIcon, ChevronUpIcon, DotsHorizontalIcon, MagnifyingGlassIcon, PlusCircledIcon } from "@radix-ui/react-icons";
+import { CaretDownIcon, CaretSortIcon, CaretUpIcon, ChevronDownIcon, ChevronUpIcon, Cross2Icon, DotsHorizontalIcon, MagnifyingGlassIcon, PlusCircledIcon } from "@radix-ui/react-icons";
 import dragSrc from '../assets/drag_icon.svg'
 import logoutSrc from '../assets/logout_icon.svg'
 import checkmark from '../assets/checkmark.svg'
 import greenCheckmark from '../assets/greencheckmark.svg'
 
-
-
+import noResult from '../assets/SearchNotFound.svg'
+import selectAll from '../assets/select-all.svg'
 import enerSrc from '../assets/enter.svg'
 import { Link } from "react-router-dom";
 import AddTaskDialog from "./AddTaskDialog";
 import EditTaskDialog from "./EditDialog";
-import { isValid, parse } from "date-fns";
+import { format, isValid, parse } from "date-fns";
 
 interface User {
     displayName: string;
@@ -46,11 +46,9 @@ interface Task {
 }
 
 
-//---------------TaskManager--------------------
 const TaskManager: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { tasks, loading, error } = useSelector((state: RootState) => state.tasks);
-    console.log(tasks.map((item) => item?.date));
 
     const [user, setUser] = useState<User | null>(null);
     const [isdialoag, setisdialoag] = useState(false);
@@ -87,29 +85,90 @@ const TaskManager: React.FC = () => {
         }
     };
 
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+    const handleSortByDueDate = () => {
+        setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
+    };
+
+    const filteredTasks = tasks.filter((task) => task?.title?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const sortedTasks = [...filteredTasks].sort((a, b) => {
+        const dateA = parse(a.dueDate, "yyyy-MM-dd", new Date());
+        const dateB = parse(b.dueDate, "yyyy-MM-dd", new Date());
+        if (!isValid(dateA)) return 1;
+        if (!isValid(dateB)) return -1;
+        return sortOrder === "asc" ? (dateA.getTime() - dateB.getTime()) : (dateB.getTime() - dateA.getTime());
+    });
+
     useEffect(() => {
         dispatch(fetchTasks({ categoryFilter, dateFilter }));
     }, [categoryFilter, dateFilter, dispatch]);
 
-    const moveTask = async (taskId: string, newStatus: string, newIndex: number) => {
+    const moveTask = (taskId: string, newStatus: string, newIndex: number) => {
+        const taskToMove = tasks.find(task => task.id === taskId);
+        if (!taskToMove) return;
+
+        const isSameList = taskToMove.status === newStatus;
+
+        if (isSameList) {
+            // Reorder within the same list
+            const updatedTasks = tasks
+                .filter(task => task.status === newStatus)
+                .sort((a, b) => a.order - b.order)
+                .map((task, index) => ({
+                    ...task,
+                    order: index + 1
+                }));
+
+            // Update the order of the moved task
+            const movedTaskIndex = updatedTasks.findIndex(task => task.id === taskId);
+            if (movedTaskIndex !== -1) {
+                updatedTasks.splice(movedTaskIndex, 1); // Remove the task from its current position
+                updatedTasks.splice(newIndex, 0, taskToMove); // Insert the task at the new position
+            }
+
+            // Update the order of all tasks in the list
+            updatedTasks.forEach((task, index) => {
+                updateTaskOrder(task.id, index + 1);
+            });
+        } else {
+            // Move task to a different list
+            updateTaskStatus(taskId, newStatus, newIndex);
+        }
+    };
+
+    const updateTaskOrder = async (taskId: string, newOrder: number) => {
+        const taskRef = doc(db, "tasks", taskId);
+        await updateDoc(taskRef, { order: newOrder });
+        dispatch(fetchTasks());
+    };
+
+    const updateTaskStatus = async (taskId: string, newStatus: string, newIndex: number) => {
         const taskRef = doc(db, "tasks", taskId);
         const taskSnapshot = await getDoc(taskRef);
-        if (!taskSnapshot.exists()) {
-            console.error("Task not found");
-            return;
-        }
 
         const taskData = taskSnapshot.data();
+        if (!taskData) {
+            console.error("Task data not found");
+            return;
+        }
         const oldStatus = taskData.status;
+
+        // Update activity log
         const updatedActivity = [
-            ...(taskSnapshot.data().activity || []), // Keep previous activities
+            ...(taskData.activity || []),
             {
                 DateTime: new Date().toISOString(),
                 desc: `You changed status from ${oldStatus} to ${newStatus}`,
             },
         ];
-        await updateDoc(taskRef, { status: newStatus, order: newIndex + 1, activity: updatedActivity });
-        dispatch(fetchTasks({ categoryFilter, dateFilter }));
+        await updateDoc(taskRef, {
+            status: newStatus,
+            order: newIndex,
+            activity: updatedActivity,
+        });
+        dispatch(fetchTasks());
     };
 
     const handleDialogOpen = () => {
@@ -117,48 +176,6 @@ const TaskManager: React.FC = () => {
     };
 
     const activeTab = tab === "board" ? "board" : "list";
-
-    const filteredTasks = tasks.filter((task) =>
-        task?.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    console.log(filteredTasks);
-
-
-    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-
-    console.log("Before sorting:", filteredTasks.map(task => task.dueDate));
-
-    const handleSortByDueDate = () => {
-        setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc'));
-
-    };
-
-    const sortedTasks = [...filteredTasks].sort((a, b) => {
-        const dateA = parse(a.dueDate, "dd MMM, yyyy", new Date());
-        const dateB = parse(b.dueDate, "dd MMM, yyyy", new Date());
-
-        // console.log("Parsed Dates:", { dateA, dateB });
-
-        // Ensure parsed dates are valid, otherwise push invalid ones to the end
-        if (!isValid(dateA)) return 1;
-        if (!isValid(dateB)) return -1;
-
-        console.log("After sorting:", filteredTasks.map(task => task.dueDate));
-        return sortOrder === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
-
-
-    });
-
-
-
-
-    // filteredTasks.forEach(task => {
-    //     const parsedDate = parse(task.dueDate, "dd MMM, yyyy", new Date());
-    //     console.log(`Task: ${task.title}, DueDate: ${task.dueDate}, ParsedDate: ${parsedDate}`);
-    // });
-
-
 
     return (
         <>
@@ -205,7 +222,7 @@ const TaskManager: React.FC = () => {
                         </div>
                         <button
                             onClick={handleDialogOpen}
-                            className=" md:w-20 w-32 bg-[#7B1984] py-2 px-6 cursor-pointer z-10 rounded-4xl text-white text-[12px] md:text-[14px]">
+                            className=" md:w-40 w-32 bg-[#7B1984] py-2 px-6 cursor-pointer z-10 rounded-4xl text-white text-[12px] md:text-[14px]">
                             Add Task
                         </button>
                     </div>
@@ -250,22 +267,24 @@ const TaskManager: React.FC = () => {
                         </div>
                     </div>
                     <div className="bg-gray-400 opacity-10 h-0.5 w-full mb-2" />
-                    {
-                        tab === 'list' &&
-                        <div className=" text-[14px] mb-2 font-medium text-black/80 w-full justify-between items-center md:flex hidden">
+
+                    {filteredTasks.length === 0 ? (
+                        <div className="flex flex-col justify-center items-center h-full text-gray-500 -mt-20">
+                            <img src={noResult} />
+                            <span className="text-black text-[16px] font-semibold text-center">It looks like we can't find any results that match.</span>
+                        </div>
+                    ) : activeTab === "list" ? (
+                        <><div className=" text-[14px] mb-2 font-medium text-black/80 w-full justify-between items-center md:flex hidden">
                             <span className="w-[25%] ml-4">Task name</span>
                             <span
                                 onClick={handleSortByDueDate}
-                                className="w-[10%] justify-end flex items-center">Due on <CaretSortIcon /> </span>
-                            <span className="w-[20%] justify-end flex ">Task Status</span>
+                                className="w-[10%] cursor-pointer justify-end flex items-center"
+                            >
+                                Due on {sortOrder === 'asc' ? <CaretUpIcon /> : <CaretDownIcon />}
+                            </span>
+                            <span className="w-[20%] justify-end flex mr-4">Task Status</span>
                             <span className="w-[25%]">Task Category</span>
-                        </div>
-                    }
-
-
-                    {/* Render Filtered Tasks in List or Board View */}
-                    {activeTab === "list" ? (
-                        <TaskListView tasks={sortedTasks} moveTask={moveTask} />
+                        </div><TaskListView tasks={sortedTasks} moveTask={moveTask} /></>
                     ) : (
                         <TaskBoardView tasks={sortedTasks} moveTask={moveTask} />
                     )}
@@ -275,6 +294,7 @@ const TaskManager: React.FC = () => {
         </>
     );
 };
+
 
 // ---------------------- LIST VIEW ----------------------
 const TaskListView: React.FC<{ tasks: Task[]; moveTask: Function }> = ({ tasks, moveTask }) => {
@@ -404,6 +424,8 @@ const TaskSection: React.FC<{
 
     const [showStatusDropdown, setShowStatusDropdown] = useState(false);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+    const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+
 
 
     return (
@@ -534,7 +556,7 @@ const TaskSection: React.FC<{
                             <div key={task.id} className="flex justify-center w-full h-full flex-col">
                                 <div className="flex items-center ml-2 ">
 
-                                    <DraggableTask key={task.id} task={task} index={index} moveTask={moveTask} />
+                                    <DraggableTask key={task.id} task={task} index={index} moveTask={moveTask} setSelectedTasks={setSelectedTasks} selectedTasks={selectedTasks} />
                                 </div>
                                 {!isBoardView && <div className="bg-gray-400 opacity-10 h-0.5 w-full" />}
                             </div>
@@ -551,8 +573,9 @@ const TaskSection: React.FC<{
     );
 };
 
+
 //-----------------DraggableTask--------------------
-const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function }> = ({ task, index, moveTask }) => {
+const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function, setSelectedTasks: any, selectedTasks: any }> = ({ task, index, moveTask, setSelectedTasks, selectedTasks }) => {
     const dispatch = useDispatch<AppDispatch>();
 
     const [{ isDragging }, drag] = useDrag({
@@ -567,19 +590,30 @@ const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function }>
     const { tab } = useParams<{ tab: string }>();
 
 
+    const toggleTaskSelection = (taskId: string, checked: boolean) => {
+        setSelectedTasks && setSelectedTasks((prev: []) => {
+            if (checked) {
+                let list = [...prev, taskId]
+                return list
+            }
+            else {
+                return prev.filter(id => id !== taskId);
+            }
+        });
+    };
+
+
     const handleUpdate = async () => {
         const taskRef = doc(db, "tasks", task.id);
         setIsEditing(false);
-        dispatch(fetchTasks())
+        dispatch(fetchTasks());
     };
 
     const handleDelete = async () => {
         await deleteDoc(doc(db, "tasks", task.id));
         moveTask(task.id, "", -1);
-        dispatch(fetchTasks())
-
+        dispatch(fetchTasks());
     };
-
     const [status, setStatus] = useState(task.status);
     const taskRef = doc(db, "tasks", task.id);
 
@@ -621,92 +655,122 @@ const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function }>
     const handleClose = () => {
         setAnchorEl(null);
     };
-    // const handleUpdate = (updatedTask) => {
-    //     console.log("Updated Task:", updatedTask);
-    //     // Perform any further action, such as re-fetching tasks
-    // };
+
+    const handleBatchDelete = async () => {
+        await Promise.all(selectedTasks?.map((id: string) => deleteDoc(doc(db, "tasks", id))));
+        setSelectedTasks([]);
+        dispatch(fetchTasks());
+    };
+
+    const handleBatchUpdate = async (status: string) => {
+        if (!status || selectedTasks?.length === 0) return;
+
+        console.log("Batch Updating Tasks:", selectedTasks);
+
+        try {
+            const batch = writeBatch(db);
+            selectedTasks?.forEach((id: string) => {
+                const taskRef = doc(db, "tasks", id);
+                batch.update(taskRef, {
+                    status,
+                    activity: arrayUnion({
+                        DateTime: new Date().toISOString(),
+                        desc: `Status changed to ${status}`,
+                    }),
+                });
+            });
+
+            await batch.commit();
+            setSelectedTasks([]);
+            dispatch(fetchTasks());
+        } catch (error) {
+            console.error("Error updating tasks:", error);
+        }
+    };
+
 
     return (
         <motion.div
             ref={drag}
-
-            className={`p-2 rounded cursor-pointer   ${tab === 'board' ? ' items-baseline ' : 'gap-4 items-center'} flex   w-full ${isDragging ? "opacity-50" : "opacity-100"}`}
+            className={`p-2 rounded cursor-pointer ${tab === 'board' ? ' items-baseline ' : 'gap-4 items-center'} flex w-full ${isDragging ? "opacity-50" : "opacity-100"}`}
         >
-            {(
-                tab === 'list' ?
+            {tab === 'list' ? (
+                <div className="flex md:justify-between items-center w-full">
+                    <div className="flex items-center ">
+                        <input
+                            type="checkbox"
+                            checked={selectedTasks?.includes(task.id)}
+                            className="mr-3"
+                            onChange={(e) => toggleTaskSelection(task.id, e.target.checked)}
+                        />
 
-                    <div className="flex  md:justify-between items-center w-full">
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                // checked={task.completed}
-                                // onChange={() => toggleTaskCompletion(task.id)}
-                                className="h-4 w-4 mr-2 cursor-pointer"
-                            />
-                            {
-                                task.status === 'completed' ?
-                                    <img src={greenCheckmark} className="h-6 w-6" />
-                                    :
-                                    <img src={checkmark} className="h-6 w-6" />
-                            }
-                            <img src={dragSrc} className="h-6 w-6 hidden md:flex" />
-                        </div>
-                        <span
-                            onClick={() => {
-                                setIsEditing(true);
-                                handleClose();
-                            }}
-                            className={`${task.status === 'completed' ? 'line-through' : ''} w-1/3 ml-4`}>{task?.title}</span>
-                        <span className="w-1/4 text-[14px] hidden md:flex ">{task?.dueDate}</span>
-                        <div className="hidden md:flex justify-center items-center mr-20">
-                            <Select
-                                value={status}
-                                onChange={handleChange}
-                                IconComponent={() => null}
-                                className=" bg-gray-200 p-2 h-8 rounded cursor-pointer border border-none "
-                            >
-                                {Object.entries(statusLabels).map(([key, label]) => (
-                                    <MenuItem className="text-base" key={key} value={key}>
-                                        {label}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </div>
-                        <span className="w-1/4 text-center uppercase hidden md:flex">{task?.category}</span>
-
-                        <div className="hidden md:flex">
-                            <IconButton onClick={handleClick}>
-                                <DotsHorizontalIcon />
-                            </IconButton>
-
-                            <Menu anchorEl={anchorEl} open={isOpen} onClose={handleClose}>
-                                <MenuItem
-                                    onClick={() => {
-                                        setIsEditing(true);
-                                        handleClose();
-                                    }}
-                                >
-                                    <EditIcon className="" sx={{ marginRight: 1 }} />
-                                    Edit
-                                </MenuItem>
-
-                                <MenuItem
-                                    onClick={() => {
-                                        handleDelete();
-                                        handleClose();
-                                    }}
-                                >
-                                    <DeleteIcon width={'10px'} color={"error"} sx={{ marginRight: 1 }} />
-                                    Delete
-                                </MenuItem>
-                            </Menu>
-                        </div>
-                        <EditTaskDialog isOpen={isEditing} onClose={() => setIsEditing(false)} onUpdate={handleUpdate} taskId={task.id} />
-
-
+                        {task.status === 'completed' ? (
+                            <img src={greenCheckmark} className="h-6 w-6" />
+                        ) : (
+                            <img src={checkmark} className="h-6 w-6" />
+                        )}
+                        <img src={dragSrc} className="h-6 w-6 hidden md:flex" />
                     </div>
-                    :
-                    <><div className="bg-white flex flex-col w-full p-2 rounded-lg h-30">
+                    <span
+                        onClick={() => {
+                            setIsEditing(true);
+                            handleClose();
+                        }}
+                        className={`${task.status === 'completed' ? 'line-through' : ''} w-1/3 ml-4`}
+                    >
+                        {task?.title}
+                    </span>
+                    <span className="w-1/4 text-[14px] hidden md:flex">
+                        {task?.dueDate ? format(new Date(task?.dueDate), "dd MMM, yyyy") : ''}
+                    </span>
+                    <div className="hidden md:flex justify-center items-center mr-20 text-[10px]">
+                        <Select
+                            value={status}
+                            onChange={handleChange}
+                            IconComponent={() => null}
+                            style={{ font: '10px' }}
+                            className="bg-gray-200  h-8 rounded cursor-pointer border border-none text-[10px]"
+                        >
+                            {Object.entries(statusLabels).map(([key, label]) => (
+                                <MenuItem className="text-base" key={key} value={key}>
+                                    {label}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </div>
+                    <span className="w-1/4 text-center text-[14px] uppercase hidden md:flex">{task?.category}</span>
+
+                    <div className="hidden md:flex">
+                        <IconButton onClick={handleClick}>
+                            <DotsHorizontalIcon />
+                        </IconButton>
+                        <Menu anchorEl={anchorEl} open={isOpen} onClose={handleClose}>
+                            <MenuItem
+                                onClick={() => {
+                                    setIsEditing(true);
+                                    handleClose();
+                                }}
+                            >
+                                <EditIcon className="" sx={{ marginRight: 1 }} />
+                                Edit
+                            </MenuItem>
+
+                            <MenuItem
+                                onClick={() => {
+                                    handleDelete();
+                                    handleClose();
+                                }}
+                            >
+                                <DeleteIcon width={'10px'} color={"error"} sx={{ marginRight: 1 }} />
+                                Delete
+                            </MenuItem>
+                        </Menu>
+                    </div>
+                    <EditTaskDialog isOpen={isEditing} onClose={() => setIsEditing(false)} onUpdate={handleUpdate} taskId={task.id} />
+                </div>
+            ) : (
+                <>
+                    <div className="bg-white flex flex-col w-full p-2 rounded-lg h-30">
                         <div className="flex justify-between items-center">
                             <span className={`${task.status === 'completed' ? 'line-through' : ''} w-1/3 ml-2 truncate`}>{task.title}</span>
                             <div>
@@ -739,14 +803,44 @@ const DraggableTask: React.FC<{ task: Task; index: number; moveTask: Function }>
                             </div>
                         </div>
                         <div className="flex justify-between items-end h-full">
-                            <span className="w-1/4  text-[14px] font-medium text-black opacity-40">{task?.category}</span>
-                            <span className="  text-[14px] font-medium text-black opacity-40">{task?.dueDate}</span>
+                            <span className="w-1/4 text-[14px] font-medium text-black opacity-40">{task?.category}</span>
+                            <span className="text-[14px] font-medium text-black opacity-40">{task?.dueDate ? format(new Date(task?.dueDate), "dd MMM, yyyy") : ''}</span>
                         </div>
                     </div>
-                        <EditTaskDialog isOpen={isEditing} onClose={() => setIsEditing(false)} onUpdate={handleUpdate} taskId={task.id} /></>
+                    <EditTaskDialog isOpen={isEditing} onClose={() => setIsEditing(false)} onUpdate={handleUpdate} taskId={task.id} />
+                </>
+            )}
+
+            {selectedTasks?.length > 1 && (
+                <div className="fixed bottom-4 z-50 right-[490px] flex justify-center items-center bg-gray-900 text-white p-3  gap-4 shadow-lg rounded-2xl">
+                    <div className="border border-white p-2 rounded-2xl text-[12px] flex gap-4 items-center">
+                        {selectedTasks?.length} Tasks Selected
+                        <Cross2Icon className="w-4 h-4" />
+                    </div>
+                    <img src={selectAll} alt="slect all" className="h-4 w-4 mr-4" />
+                    <select
+                        value=""
+                        onChange={(e) => handleBatchUpdate(e.target.value)}
+                        className="bg-gray-800  p-1 border-2 border-white appearance-none text-center rounded-3xl text-white cursor-pointer border-none"
+                    >
+                        <option value="" disabled>Status</option>
+                        <option value="todo">TO-DO</option>
+                        <option value="inProgress">IN-PROGRESS</option>
+                        <option value="completed">COMPLETED</option>
+                    </select>
+
+                    {/* Delete Button */}
+                    <button
+                        onClick={handleBatchDelete}
+                        className="bg-[#E13838]/40 px-3 py-1 cursor-pointer rounded-3xl  text-[#E13838] transition"
+                    >
+                        Delete
+                    </button>
+                </div>
             )}
         </motion.div>
     );
 };
+
 
 export default TaskManager;

@@ -186,7 +186,7 @@ const EditTaskDialog = ({ isOpen, onClose, taskId, onUpdate }) => {
                   type="text"
                   value={task?.title}
                   onChange={(e) => setTask({ ...task, title: e.target.value })}
-                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
@@ -194,7 +194,7 @@ const EditTaskDialog = ({ isOpen, onClose, taskId, onUpdate }) => {
                 <textarea
                   value={task?.description}
                   onChange={(e) => setTask({ ...task, description: e.target.value })}
-                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div className="md:flex justify-between items-center gap-4">
@@ -205,14 +205,14 @@ const EditTaskDialog = ({ isOpen, onClose, taskId, onUpdate }) => {
                   </label>
                   <div className="flex gap-2 ">
                     <button
-                      className={`px-4 py-2 border rounded-full text-sm font-medium focus:outline-none ${category === "work" ? "bg-[#7B1984] text-white" : ""
+                      className={`px-4 py-2 border cursor-pointer border-gray-300 rounded-full text-sm font-medium focus:outline-none ${category === "work" ? "bg-[#7B1984] text-white" : ""
                         }`}
                       onClick={() => setCategory("work")}
                     >
                       Work
                     </button>
                     <button
-                      className={`px-4 py-2 border rounded-full text-sm font-medium focus:outline-none ${category === "personal" ? "bg-[#7B1984] text-white" : ""
+                      className={`px-4 py-2 border cursor-pointer border-gray-300 rounded-full text-sm font-medium focus:outline-none ${category === "personal" ? "bg-[#7B1984] text-white" : ""
                         }`}
                       onClick={() => setCategory("personal")}
                     >
@@ -250,7 +250,22 @@ const EditTaskDialog = ({ isOpen, onClose, taskId, onUpdate }) => {
               </div>
               <div className="pt-4">
                 <h3 className="text-lg font-semibold mb-2">Upload Attachment</h3>
-                <input type="file" onChange={(e) => handleFileUpload(e.target.files?.[0])} className="w-full border p-2 rounded-lg" disabled={uploading} />
+                <div>
+                  <input
+                    type="file" onChange={(e) => handleFileUpload(e.target.files?.[0])}
+                    id="add-file"
+                    className="border border-gray-300 hidden rounded-lg p-3 w-full"
+                  />
+                  <label
+                    className="block text-sm text-gray-600 mb-2">Attachment</label>
+                  <label
+                    htmlFor="add-file"
+                    className="h-10 bg-[#F1F1F1]/30 rounded-b-md text-center flex justify-center items-center">
+                    Drop your files here or <span className="text-[#2956DD] underline ml-1 cursor-pointer"> Update</span>
+                  </label>
+
+                </div>
+                {/* <input type="file" onChange={(e) => handleFileUpload(e.target.files?.[0])} className="w-full border p-2 rounded-lg" disabled={uploading} /> */}
               </div>
               {tempAttachment && (
                 <div className="mt-6 border-t pt-4 relative ">

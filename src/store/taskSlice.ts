@@ -5,6 +5,7 @@ import { format, isToday } from "date-fns";
 
 // Define Task Type
 interface Task {
+    title: any;
     id: string;
     description: string;
     dueDate: string;
@@ -66,25 +67,20 @@ export const fetchTasks = createAsyncThunk<Task[], { categoryFilter?: string; da
         const querySnapshot = await getDocs(q);
         const fetchedTasks: Task[] = querySnapshot.docs.map((doc) => {
             const data = doc.data();
-            console.log(doc.data().dueDate);
-
-            const formattedDate = data.dueDate
-                ? format(new Date(data.dueDate), "dd MMM, yyyy")
-                : format(new Date().toISOString().split("T")[0] , "dd MMM, yyyy");
+            // const formattedDate = data.dueDate
+            //     ? format(new Date(data.dueDate), "dd MMM, yyyy")
+            //     : format(new Date().toISOString().split("T")[0] , "dd MMM, yyyy");
             return {
                 id: doc.id,
                 title: data.title,
                 description: data.description,
                 status: data.status,
                 category: data.category,
-                dueDate: formattedDate,
+                dueDate: data.dueDate,
                 order: data.order || 0,
                 activity : data.activity
             };
         });
-        console.log(fetchedTasks);
-
-
         return fetchedTasks;
     }
 );
