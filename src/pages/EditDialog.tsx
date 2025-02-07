@@ -157,7 +157,7 @@ const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, onClose, taskId
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.8, opacity: 0 }}
-        className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-5xl"
+        className="bg-white rounded-2xl shadow-lg p-6 w-full md:max-w-5xl max-w-xs" 
       >
         <div className="sm:hidden flex justify-around md:border-b border-none">
           <button
@@ -267,7 +267,7 @@ const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, onClose, taskId
                     className="block text-sm text-gray-600 mb-2">Attachment</label>
                   <label
                     htmlFor="add-file"
-                    className="h-10 bg-[#F1F1F1]/30 rounded-b-md text-center flex justify-center items-center">
+                    className="h-10 bg-[#F1F1F1]/30 text-[12px] md:text-[16px] rounded-b-md text-center flex justify-center items-center">
                     Drop your files here or <span className="text-[#2956DD] underline ml-1 cursor-pointer"> Update</span>
                   </label>
 
