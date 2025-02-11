@@ -12,7 +12,8 @@ Google Sign-In using Firebase Authentication.
 
 User profile management.
 
-2. Task Managemen
+2. Task Management
+
 Create, edit, and delete tasks.
 
 Categorize tasks (e.g., Work, Personal) and add tags.
@@ -73,13 +74,13 @@ Drag & Drop: react-beautiful-dnd
 ```bash
 git clone https://github.com/ManasKapoor07/alter-office.git
 cd taskbuddy
-
+```
 2 Install Dependencies
-
+```
 npm install
-
+```
 3 Run the Project
-
+```
 npm run dev
-
-The app should now be running on http://localhost:5173/ 
+````
+The app should now be running on http://localhost:5173/.
