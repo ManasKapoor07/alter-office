@@ -12,8 +12,7 @@ Google Sign-In using Firebase Authentication.
 
 User profile management.
 
-2. Task Management
-
+2. Task Managemen
 Create, edit, and delete tasks.
 
 Categorize tasks (e.g., Work, Personal) and add tags.
@@ -68,10 +67,10 @@ File Storage: Supabase
 
 Drag & Drop: react-beautiful-dnd
 
-🏗 Installation & Setup
+### 🏗 Installation & Setup
 
-1 Clone the Repository
-
+#### 1. Clone the Repository
+```bash
 git clone https://github.com/ManasKapoor07/alter-office.git
 cd taskbuddy
 
